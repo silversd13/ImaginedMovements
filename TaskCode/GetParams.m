@@ -8,20 +8,7 @@ function Params = GetParams(Params)
 Params.Verbose = true;
 
 %% Experiment
-Params.Task = 'RandomTargets';
-switch Params.ControlMode,
-    case 1, Params.ControlModeStr = 'MousePosition';
-    case 2, Params.ControlModeStr = 'MouseVelocity';
-    case 3, Params.ControlModeStr = 'KalmanVelocity';
-end
-
-%% Control
-Params.Gain             = 1;
-Params.CenterReset      = false;
-Params.Assistance       = .1; % value btw 0 and 1, 1 full assist
-Params.CLDA.Type        = 0; % 0-none, 1-refit, 2-smooth batch, 3-RML
-Params.CLDA.AdaptType   = 'linear'; % {'none','linear'}, affects assistance & lambda for rml
-Params.InitializationMode = 1; % 1-imagined mvmts, 2-shuffled imagined mvmts
+Params.Task = 'ImaginedMovements';
 
 %% Current Date and Time
 % get today's date
@@ -38,11 +25,11 @@ if strcmpi(Params.Subject,'Test'),
 end
 
 if IsWin,
-    projectdir = 'C:\Users\ganguly-lab2\Documents\MATLAB\CursorControlRandomTargets';
+    projectdir = 'C:\Users\ganguly-lab2\Documents\MATLAB\ImaginedMovements';
 elseif IsOSX,
-    projectdir = '/Users/daniel/Projects/CursorControlRandomTargets/';
+    projectdir = '/Users/daniel/Projects/ImaginedMovements/';
 else,
-    projectdir = '/home/dsilver/Projects/CursorControlRandomTargets/';
+    projectdir = '/home/dsilver/Projects/ImaginedMovements/';
 end
 addpath(genpath(fullfile(projectdir,'TaskCode')));
 
@@ -69,117 +56,66 @@ if exist(Params.Datadir,'dir'),
 end
 mkdir(datadir);
 
-
 %% Timing
 Params.ScreenRefreshRate = 10; % Hz
 Params.UpdateRate = 10; % Hz
-Params.BaselineTime = 0; % secs
-
-%% Targets
-Params.TargetSize = 30;
-Params.TargetRect = ...
-    [-Params.TargetSize -Params.TargetSize +Params.TargetSize +Params.TargetSize];
-Params.OutTargetColor = [0,255,0];
-Params.InTargetColor = [255,0,0];
-Params.Workspace = [-400,-400;400,400]; % [x0,y0;x1,y1]
-Params.NewTargetDist = 100;
-Params.TargetSelectionFlag  = 1; % 1-uniform from workspace, 2-1, but must be dist away from cursor
-switch Params.TargetSelectionFlag,
-    case 1, Params.TargetFunc = @() URand(Params.Workspace);
-    case 2, Params.TargetFunc = @() URandDist(Params.Workspace,Params.NewTargetDist);
-end
-
-%% Cursor
-Params.CursorColor = [0,0,255];
-Params.CursorSize = 5;
-Params.CursorRect = [-Params.CursorSize -Params.CursorSize ...
-    +Params.CursorSize +Params.CursorSize];
-
-%% Kalman Filter Properties
-dt = 1/Params.UpdateRate;
-if Params.ControlMode==3,
-    Params.KF.A = [...
-        1       0       dt      0       0;
-        0       1       0       dt      0;
-        0       0       .8      0       0;
-        0       0       0       .8      0;
-        0       0       0       0       1];
-    Params.KF.W = [...
-        0       0       0       0       0;
-        0       0       0       0       0;
-        0       0       500     0       0;
-        0       0       0       500     0;
-        0       0       0       0       0];
-    Params.KF.P = eye(5);
-    Params.KF.InitializationMode = Params.InitializationMode; % 1-imagined mvmts, 2-shuffled
-end
+Params.BaselineTime = 10; % secs
 
 %% Trial and Block Types
-Params.NumImaginedBlocks    = 1;
-Params.NumAdaptBlocks       = 1;
-Params.NumFixedBlocks       = 1;
-Params.NumTrialsPerBlock    = 10;
-
-%% CLDA Parameters
-TypeStrs                = {'none','refit','smooth_batch','rml'};
-Params.CLDA.TypeStr     = TypeStrs{Params.CLDA.Type+1};
-
-Params.CLDA.UpdateTime = 80; % secs, for smooth batch
-Params.CLDA.Alpha = exp(log(.5) / (120/Params.CLDA.UpdateTime)); % for smooth batch
-Params.CLDA.Lambda = exp(log(.5) / (30*Params.UpdateRate)); % for RML
-
-switch Params.CLDA.AdaptType,
-    case 'none',
-        Params.CLDA.DeltaLambda = 0;
-        Params.CLDA.DeltaAssistance = 0;
-    case 'linear',
-        FinalLambda = exp(log(.5) / (500*Params.UpdateRate));
-        DeltaLambda = (FinalLambda - Params.CLDA.Lambda) ...
-            / (Params.NumAdaptBlocks...
-            *Params.NumTrialsPerBlock...
-            *Params.UpdateRate...
-            *5); % sec/trial;
-        Params.CLDA.DeltaLambda = DeltaLambda; % for RML
-        switch Params.CLDA.Type,
-            case 2, % smooth batch
-                Params.CLDA.DeltaAssistance = ... % linearly decrease assistance
-                Params.Assistance...
-                /(Params.NumAdaptBlocks*Params.NumTrialsPerBlock*5/Params.CLDA.UpdateTime);
-            case 3, % RML
-            Params.CLDA.DeltaAssistance = ... % linearly decrease assistance
-                Params.Assistance...
-                /(Params.NumAdaptBlocks*Params.NumTrialsPerBlock);
-            otherwise, % none or refit
-            Params.CLDA.DeltaAssistance = 0;
-        end
-end
+Params.NumBlocks            = 10;
+Params.NumTrialsPerBlock    = 3;
 
 %% Hold Times
-Params.TargetHoldTime = .3;
-Params.InterTrialInterval = 0;
-Params.MaxStartTime = 10;
-Params.MaxReachTime = 10;
-Params.InterBlockInterval = 0;
+Params.InterTrialInterval   = .5;
+Params.InterBlockInterval   = 0;
+Params.HoldInterval         = 2;
+Params.MovementInterval     = 3;
+Params.MovementTime         = .75*Params.MovementInterval;
 
-%% Feedback
-Params.FeedbackSound = false;
-Params.ErrorWaitTime = 2;
-Params.ErrorSound = 1000*audioread('buzz.wav');
-Params.ErrorSoundFs = 8192;
-[Params.RewardSound,Params.RewardSoundFs] = audioread('reward1.wav');
-% play sounds silently once so Matlab gets used to it
-sound(0*Params.ErrorSound,Params.ErrorSoundFs)
+%% Movements
+Params.Movements = {...
+    'Wrist Flexion'
+    'Wrist Extension'
+    'Elbow Flexion'
+    'Elbow Extension'
+    };
+Params.MvmtSelectionFlag = 2; % 1-in order, 2-pseudorandom, 3-random, 
+switch Params.MvmtSelectionFlag,
+    case {1,2}, Params.MvmtSelection = @(n,B) mod(B-1,n)+1;
+    case 3, Params.MvmtSelection = @(n,B) randi(n);
+end
+
+%% Visual Go Cue
+Params.VisCue.Size = 30;
+Params.VisCue.StopColor = [255,0,0];
+Params.VisCue.StartColor = [0,255,0];
+Params.VisCue.Position  = [0,100];
+Params.VisCue.Rect = ...
+    [-Params.VisCue.Size -Params.VisCue.Size ...
+    +Params.VisCue.Size +Params.VisCue.Size];
+
+%% Auditory Go Cue
+Params.AudCue.Fs = 44100; % hz
+Params.AudCue.Time = .5; % secs
+Params.AudCue.Beep = MakeBeep(500, Params.AudCue.Time, Params.AudCue.Fs);
+
+%% Visual Movement Timing
+Params.VisMvmt.Flag = true;
+Params.VisMvmt.Size = 10;
+Params.VisMvmt.Rect = ...
+    [-Params.VisMvmt.Size -Params.VisMvmt.Size ...
+    +Params.VisMvmt.Size +Params.VisMvmt.Size];
+Params.VisMvmt.Color = [66,217,244];
+Params.VisMvmt.StartPos = [200,100];
+Params.VisMvmt.EndPos = [200,-300];
+Params.VisMvmt.Traj = GenerateCursorTraj(...
+    Params.VisMvmt.StartPos,Params.VisMvmt.EndPos,...
+    Params.MovementTime,Params);
 
 %% BlackRock Params
 Params.GenNeuralFeaturesFlag = true;
 Params.ZscoreRawFlag = true;
-Params.ZscoreFeaturesFlag = false;
 Params.SaveProcessed = false;
-
-Params.DimRed.Flag = false;
-Params.DimRed.Method = 1; % 1-pca, 2-fa
-Params.DimRed.AvgTrialsFlag = false; % 0-cat imagined mvmts, 1-avg imagined mvmts
-Params.DimRed.NumDims = [];
 
 Params.Fs = 1000;
 Params.NumChannels = 128;

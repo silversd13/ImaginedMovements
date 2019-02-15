@@ -1,18 +1,16 @@
-function ExperimentStart(Subject,ControlMode,BLACKROCK,DEBUG)
-% function ExperimentStart(Subject,ControlMode)
+function ExperimentStart(Subject,BLACKROCK,DEBUG)
+% function ExperimentStart(Subject)
 % Subject - string for the subject id
-% ControlMode - [1,2,3] for mouse pos, mouse vel, & kalman
 % BLACKROCK - [0,1] if 1, collects, processes, and saves neural data
 % DEBUG - [0,1] if 1, enters DEBUG mode in which screen is small and cursor
 %   remains unhidden
 
 %% Clear All and Close All
-clearvars -global -except Subject ControlMode BLACKROCK DEBUG
+clearvars -global -except Subject BLACKROCK DEBUG
 clc
 warning off
 
 if ~exist('Subject','var'), Subject = 'Test'; DEBUG = 1; end
-if ~exist('ControlMode','var'), ControlMode = 2; end
 if ~exist('BLACKROCK','var'), BLACKROCK = 0; end
 if ~exist('DEBUG','var'), DEBUG = 0; end
 
@@ -23,7 +21,6 @@ if strcmpi(Subject,'Test'), Subject = 'Test'; end
 
 %% Retrieve Parameters from Params File
 Params.Subject = Subject;
-Params.ControlMode = ControlMode;
 Params.BLACKROCK = BLACKROCK;
 Params.DEBUG = DEBUG;
 Params = GetParams(Params);
@@ -40,9 +37,6 @@ end
 % create neuro structure for keeping track of all neuro updates/state
 % changes
 Neuro.ZscoreRawFlag     = Params.ZscoreRawFlag;
-Neuro.ZscoreFeaturesFlag= Params.ZscoreFeaturesFlag;
-Neuro.DimRed            = Params.DimRed;
-Neuro.CLDA              = Params.CLDA;
 Neuro.SaveProcessed     = Params.SaveProcessed;
 Neuro.FilterBank        = Params.FilterBank;
 Neuro.NumChannels       = Params.NumChannels;
@@ -74,28 +68,13 @@ Neuro.FeatureStats.var    = zeros(1,Params.NumChannels); % estimate of variance 
 % create low freq buffers
 Neuro.FilterDataBuf = zeros(Neuro.BufferSamps,Neuro.NumChannels,3);
 
-%% Kalman Filter
-if Params.ControlMode==3,
-    KF = Params.KF;
-    KF.CLDA = Params.CLDA;
-else,
-    KF = [];
-end
-
 %% Check Important Params with User
 LogicalStr = {'false', 'true'};
-IMStr = {'imagined mvmts', 'shuffled imagined mvmts'};
-DimRedStr = {'PCA', 'FA'};
-Params.Subject = Subject;
-Params.ControlMode = ControlMode;
-Params.BLACKROCK = BLACKROCK;
-Params.DEBUG = DEBUG;
 
 fprintf('\n\nImportant Experimental Parameters:')
 fprintf('\n\n  Task Parameters:')
 fprintf('\n    - task: %s', Params.Task)
 fprintf('\n    - subject: %s', Params.Subject)
-fprintf('\n    - control mode: %s', Params.ControlModeStr)
 fprintf('\n    - blackrock mode: %s', LogicalStr{Params.BLACKROCK+1})
 fprintf('\n    - debug mode: %s', LogicalStr{Params.DEBUG+1})
 
@@ -105,22 +84,8 @@ if Params.GenNeuralFeaturesFlag,
 else,
     fprintf('\n    - reference mode: %s', Params.ReferenceModeStr)
     fprintf('\n    - zscore raw: %s', LogicalStr{Params.ZscoreRawFlag+1})
-    fprintf('\n    - zscore features: %s', LogicalStr{Params.ZscoreFeaturesFlag+1})
     fprintf('\n    - save filtered data: %s', LogicalStr{Params.ZscoreRawFlag+1})
 end
-fprintf('\n    - dimensionality reduction: %s', LogicalStr{Params.DimRed.Flag+1})
-if Params.DimRed.Flag,
-    fprintf('\n      - method: %s', DimRedStr{Params.DimRed.Method})
-end
-
-fprintf('\n\n  BCI Parameters:')
-fprintf('\n    - Imagined Movements: %s', LogicalStr{double(Params.NumImaginedBlocks>0) +1})
-fprintf('\n      - initialization mode: %s', IMStr{Params.InitializationMode})
-fprintf('\n    - Adaptation Decoding: %s', LogicalStr{double(Params.NumAdaptBlocks>0) +1})
-fprintf('\n      - adapt type: %s', Params.CLDA.TypeStr)
-fprintf('\n      - adapt change type: %s', Params.CLDA.AdaptType)
-fprintf('\n    - Fixed Decoding: %s', LogicalStr{double(Params.NumFixedBlocks>0) +1})
-
 
 str = input('\n\nContinue? (''n'' to quit, otherwise continue)\n' ,'s');
 if strcmpi(str,'n'),
@@ -137,10 +102,17 @@ else
 end
 Params.Center = [mean(Params.ScreenRectangle([1,3])),mean(Params.ScreenRectangle([2,4]))];
 if ~DEBUG, HideCursor; end
+Params.IFI = Screen('GetFlipInterval', Params.WPTR);
 
 % Font
 Screen('TextFont',Params.WPTR, 'Arial');
 Screen('TextSize',Params.WPTR, 28);
+
+%% Initialize Sound
+InitializePsychSound(1);
+% Params.PAPTR = PsychPortAudio('Open', [], 1, 1, Params.AudCue.Fs, 1);
+Params.PAPTR = PsychPortAudio('Open', [], 1, 1, 44100, 1);
+PsychPortAudio('Volume', Params.PAPTR, 0.25);
 
 %% Start
 try
@@ -150,25 +122,16 @@ try
     end
     
     % Imagined Cursor Movements Loop
-    if Params.NumImaginedBlocks>0,
-        [Neuro,KF] = RunTask(Params,Neuro,1,KF);
-    end
-    
-    % Adaptation Loop
-    if Params.NumAdaptBlocks>0,
-        [Neuro,KF] = RunTask(Params,Neuro,2,KF);
-    end
-    
-    % Fixed Decoder Loop
-    if Params.NumFixedBlocks>0,
-        [Neuro,KF] = RunTask(Params,Neuro,3,KF);
+    if Params.NumBlocks>0,
+        Neuro = RunTask(Params,Neuro);
     end
     
     % Pause and Finish!
-    ExperimentStop();
+    ExperimentStop(0,Params);
     
 catch ME, % handle errors gracefully
     Screen('CloseAll')
+    PsychPortAudio('Close', Params.PAPTR);
     for i=length(ME.stack):-1:1,
         if i==1,
             errorMessage = sprintf('Error in function %s() at line %d.\n\nError Message:\n%s\n\n', ...

@@ -39,7 +39,7 @@ end
 neural_features(:,Neuro.BadChannels) = 0;
 
 % put features in Neuro
-Neuro.NeuralFeatures = neural_features(:);
+Neuro.NeuralFeatures = neural_features;
 
 end % CompNeuralFeatures
 

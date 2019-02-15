@@ -1,4 +1,4 @@
-function [Data, Neuro, KF] = RunTrial(Data,Params,Neuro,TaskFlag,KF)
+function [Data, Neuro] = RunTrial(Data,Params,Neuro)
 % Runs a trial, saves useful data along the way
 % Each trial contains the following pieces
 % 1) Inter-trial interval
@@ -7,37 +7,39 @@ function [Data, Neuro, KF] = RunTrial(Data,Params,Neuro,TaskFlag,KF)
 % 4) Get the cursor to the reach target (different on each trial)
 % 5) Feedback
 
-global Cursor
-
 %% Set up trial
-ReachTargetPos = Data.TargetPosition;
+Movement = Data.Movement;
 
 % Output to Command Line
 fprintf('\nTrial: %i\n',Data.Trial)
-fprintf('Target: %i\n',Data.TargetPosition)
-if Params.Verbose,
-    fprintf('  Cursor Assistance: %.2f\n',Cursor.Assistance)
-    if Params.CLDA.Type==3,
-        fprintf('  Lambda: %.5g\n',Neuro.CLDA.Lambda)
-    end
-end
+fprintf('Target: %s\n',Movement)
 
 % keep track of update times
+tim = GetSecs;
+LastPredictTime = tim;
+Neuro.LastUpdateTime = tim;
 dt_vec = [];
 dT_vec = [];
 
+% Visual Go Cue
+VisCueRect([1,3]) = Params.VisCue.Rect([1,3]) + Params.VisCue.Position(1) + Params.Center(1); % add x-pos
+VisCueRect([2,4]) = Params.VisCue.Rect([2,4]) + Params.VisCue.Position(2) + Params.Center(2); % add y-pos
+
+% Visual Mvmt Cue
+VisMvmtStartRect([1,3]) = Params.VisMvmt.Rect([1,3]) + Params.VisMvmt.StartPos(1) + Params.Center(1); % add x-pos
+VisMvmtStartRect([2,4]) = Params.VisMvmt.Rect([2,4]) + Params.VisMvmt.StartPos(2) + Params.Center(2); % add y-pos
+VisMvmtEndRect([1,3]) = Params.VisMvmt.Rect([1,3]) + Params.VisMvmt.EndPos(1) + Params.Center(1); % add x-pos
+VisMvmtEndRect([2,4]) = Params.VisMvmt.Rect([2,4]) + Params.VisMvmt.EndPos(2) + Params.Center(2); % add y-pos
+
 %% Inter Trial Interval
-if ~Data.ErrorID && Params.InterTrialInterval>0,
+if Params.InterTrialInterval>0,
     tstart  = GetSecs;
     Data.Events(end+1).Time = tstart;
     Data.Events(end).Str  = 'Inter Trial Interval';
 
-    if TaskFlag==1,
-        OptimalCursorTraj = ...
-            GenerateCursorTraj(Cursor.State,Cursor.State,Params.InterTrialInterval,Params);
-        ct = 1;
-    end
-    
+    % Blank Screen
+    Screen('Flip', Params.WPTR);
+
     done = 0;
     TotalTime = 0;
     while ~done,
@@ -45,171 +47,198 @@ if ~Data.ErrorID && Params.InterTrialInterval>0,
         tim = GetSecs;
 
         % for pausing and quitting expt
-        if CheckPause, [Neuro,Data] = ExperimentPause(Params,Neuro,Data); end
+        if CheckPause,
+            [Neuro,Data] = ExperimentPause(Params,Neuro,Data);
+            LastPredictTime = Neuro.LastUpdateTime;
+        end
 
         % Update Screen Every Xsec
-        if (tim-Cursor.LastPredictTime) > 1/Params.ScreenRefreshRate,
+        if (tim-LastPredictTime) > 1/Params.ScreenRefreshRate,
             % time
-            dt = tim - Cursor.LastPredictTime;
+            dt = tim - LastPredictTime;
             TotalTime = TotalTime + dt;
             dt_vec(end+1) = dt; %#ok<*AGROW>
-            Cursor.LastPredictTime = tim;
+            LastPredictTime = tim;
             Data.Time(1,end+1) = tim;
-            
+
             % grab and process neural data
-            if ((tim-Cursor.LastUpdateTime)>1/Params.UpdateRate),
-                dT = tim-Cursor.LastUpdateTime;
+            if ((tim-Neuro.LastUpdateTime)>1/Params.UpdateRate),
+                dT = tim-Neuro.LastUpdateTime;
                 dT_vec(end+1) = dT;
-                Cursor.LastUpdateTime = tim;
+                Neuro.LastUpdateTime = tim;
                 if Params.BLACKROCK,
                     [Neuro,Data] = NeuroPipeline(Neuro,Data);
                     Data.NeuralTime(1,end+1) = tim;
                 elseif Params.GenNeuralFeaturesFlag,
                     Neuro.NeuralFeatures = VelToNeuralFeatures(Params);
-                    if Neuro.DimRed.Flag,
-                        Neuro.NeuralFactors = Neuro.DimRed.F(Neuro.NeuralFeatures);
-                        Data.NeuralFactors{end+1} = Neuro.NeuralFactors;
-                    end
                     Data.NeuralFeatures{end+1} = Neuro.NeuralFeatures;
                     Data.NeuralTime(1,end+1) = tim;
                 end
-                KF = UpdateCursor(Params,Neuro,TaskFlag,Cursor.State(1:2),KF);
             end
-            
-            % cursor
-            if TaskFlag==1, % imagined movements
-                Cursor.State(3:4) = (OptimalCursorTraj(ct,:)'-Cursor.State(1:2))/dt;
-                Cursor.State(1:2) = OptimalCursorTraj(ct,:);
-                ct = ct + 1;
-            end
-            CursorRect = Params.CursorRect;
-            CursorRect([1,3]) = CursorRect([1,3]) + Cursor.State(1) + Params.Center(1); % add x-pos
-            CursorRect([2,4]) = CursorRect([2,4]) + Cursor.State(2) + Params.Center(2); % add y-pos
-            Data.CursorState(:,end+1) = Cursor.State;
-            Data.IntendedCursorState(:,end+1) = Cursor.IntendedState;
-            Data.CursorAssist(1,end+1) = Cursor.Assistance;
 
-            % draw
-            Screen('FillOval', Params.WPTR, Params.CursorColor, CursorRect);
-            Screen('DrawingFinished', Params.WPTR);
-            Screen('Flip', Params.WPTR);
         end
 
         % end if takes too long
-        if TotalTime > Params.InterTrialInterval,
+        if TotalTime > Params.HoldInterval,
             done = 1;
         end
 
-    end % Inter Trial Interval
-end % only complete if no errors
+    end % Inter trial interval
+end % if there is an interval
 
-%% Go to reach target
-if ~Data.ErrorID,
-    tstart  = GetSecs;
-    Data.Events(end+1).Time = tstart;
-    Data.Events(end).Str  = 'Reach Target';
+%% Hold Interval
+tstart  = GetSecs;
+Data.Events(end+1).Time = tstart;
+Data.Events(end).Str  = 'Hold Interval';
 
-    if TaskFlag==1,
-        OptimalCursorTraj = [...
-            GenerateCursorTraj(Cursor.State(1:2),ReachTargetPos,1.5,Params);
-            GenerateCursorTraj(ReachTargetPos,ReachTargetPos,Params.TargetHoldTime,Params)];
-        ct = 1;
+% Stop Movement Cue (visual only)
+Screen('FillOval', Params.WPTR, Params.VisCue.StopColor, VisCueRect)
+Screen('Flip', Params.WPTR);
+
+done = 0;
+TotalTime = 0;
+while ~done,
+    % Update Time & Position
+    tim = GetSecs;
+    
+    % for pausing and quitting expt
+    if CheckPause,
+        [Neuro,Data] = ExperimentPause(Params,Neuro,Data);
+        LastPredictTime = Neuro.LastUpdateTime;
     end
     
-    done = 0;
-    TotalTime = 0;
-    InTargetTotalTime = 0;
-    while ~done,
-        % Update Time & Position
-        tim = GetSecs;
-
-        % for pausing and quitting expt
-        if CheckPause, [Neuro,Data] = ExperimentPause(Params,Neuro,Data); end
-
-        % Update Screen
-        if (tim-Cursor.LastPredictTime) > 1/Params.ScreenRefreshRate,
-            % time
-            dt = tim - Cursor.LastPredictTime;
-            TotalTime = TotalTime + dt;
-            dt_vec(end+1) = dt;
-            Cursor.LastPredictTime = tim;
-            Data.Time(1,end+1) = tim;
-
-            % grab and process neural data
-            if ((tim-Cursor.LastUpdateTime)>1/Params.UpdateRate),
-                dT = tim-Cursor.LastUpdateTime;
-                dT_vec(end+1) = dT;
-                Cursor.LastUpdateTime = tim;
-                if Params.BLACKROCK,
-                    [Neuro,Data] = NeuroPipeline(Neuro,Data);
-                    Data.NeuralTime(1,end+1) = tim;
-                elseif Params.GenNeuralFeaturesFlag,
-                    Neuro.NeuralFeatures = VelToNeuralFeatures(Params);
-                    if Neuro.DimRed.Flag,
-                        Neuro.NeuralFactors = Neuro.DimRed.F(Neuro.NeuralFeatures);
-                        Data.NeuralFactors{end+1} = Neuro.NeuralFactors;
-                    end
-                    Data.NeuralFeatures{end+1} = Neuro.NeuralFeatures;
-                    Data.NeuralTime(1,end+1) = tim;
-                end
-                KF = UpdateCursor(Params,Neuro,TaskFlag,ReachTargetPos,KF);
+    % Update Screen Every Xsec
+    if (tim-LastPredictTime) > 1/Params.ScreenRefreshRate,
+        % time
+        dt = tim - LastPredictTime;
+        TotalTime = TotalTime + dt;
+        dt_vec(end+1) = dt; %#ok<*AGROW>
+        LastPredictTime = tim;
+        Data.Time(1,end+1) = tim;
+        
+        % grab and process neural data
+        if ((tim-Neuro.LastUpdateTime)>1/Params.UpdateRate),
+            dT = tim-Neuro.LastUpdateTime;
+            dT_vec(end+1) = dT;
+            Neuro.LastUpdateTime = tim;
+            if Params.BLACKROCK,
+                [Neuro,Data] = NeuroPipeline(Neuro,Data);
+                Data.NeuralTime(1,end+1) = tim;
+            elseif Params.GenNeuralFeaturesFlag,
+                Neuro.NeuralFeatures = VelToNeuralFeatures(Params);
+                Data.NeuralFeatures{end+1} = Neuro.NeuralFeatures;
+                Data.NeuralTime(1,end+1) = tim;
             end
-            
-            % cursor
-            if TaskFlag==1, % imagined movements
-                Cursor.State(3:4) = (OptimalCursorTraj(ct,:)'-Cursor.State(1:2))/dt;
-                Cursor.State(1:2) = OptimalCursorTraj(ct,:);
-                ct = ct + 1;
-            end
-            CursorRect = Params.CursorRect;
-            CursorRect([1,3]) = CursorRect([1,3]) + Cursor.State(1) + Params.Center(1); % add x-pos
-            CursorRect([2,4]) = CursorRect([2,4]) + Cursor.State(2) + Params.Center(2); % add y-pos
-            Data.CursorState(:,end+1) = Cursor.State;
-            Data.IntendedCursorState(:,end+1) = Cursor.IntendedState;
-            Data.CursorAssist(1,end+1) = Cursor.Assistance;
+        end
+        
+        if Params.VisMvmt.Flag,
+            % Drawing
+            Screen('FillOval', Params.WPTR, ... % Stop Light
+                Params.VisCue.StopColor, ...
+                VisCueRect)
+            Screen('FillOval', Params.WPTR, ... % Start Pos
+                Params.VisMvmt.Color, ...
+                VisMvmtStartRect)
+            Screen('FrameOval', Params.WPTR, ... % End Pos
+                Params.VisMvmt.Color, ...
+                VisMvmtEndRect)
 
-            % reach target
-            ReachRect = Params.TargetRect; % centered at (0,0)
-            ReachRect([1,3]) = ReachRect([1,3]) + ReachTargetPos(1) + Params.Center(1); % add x-pos
-            ReachRect([2,4]) = ReachRect([2,4]) + ReachTargetPos(2) + Params.Center(2); % add y-pos
-
-            % draw
-            inFlag = InTarget(Cursor,ReachTargetPos,Params.TargetSize);            
-            if inFlag, ReachCol = Params.InTargetColor;
-            else, ReachCol = Params.OutTargetColor;
-            end
-            Screen('FillOval', Params.WPTR, ...
-                cat(1,ReachCol,Params.CursorColor)', ...
-                cat(1,ReachRect,CursorRect)')
-            Screen('DrawingFinished', Params.WPTR);
             Screen('Flip', Params.WPTR);
-            
-            % start counting time if cursor is in target
-            if inFlag,
-                InTargetTotalTime = InTargetTotalTime + dt;
-            else
-                InTargetTotalTime = 0;
+        end
+    end
+    
+    % end if takes too long
+    if TotalTime > Params.HoldInterval,
+        done = 1;
+    end
+    
+end % Hold Interval
+
+%% Go to reach target
+tstart  = GetSecs;
+Data.Events(end+1).Time = tstart;
+Data.Events(end).Str  = 'Movement Start';
+
+% Movement Cue (visual and auditory)
+% audio buffer
+PsychPortAudio('FillBuffer', Params.PAPTR, Params.AudCue.Beep);
+% screen buffer
+Screen('FillOval', Params.WPTR, Params.VisCue.StartColor, VisCueRect)
+% cues
+PsychPortAudio('Start', Params.PAPTR, 1, 0, 1);
+Screen('Flip', Params.WPTR);
+
+done = 0;
+TotalTime = 0;
+ct = 1;
+while ~done,
+    % Update Time & Position
+    tim = GetSecs;
+    
+    % for pausing and quitting expt
+    if CheckPause,
+        [Neuro,Data] = ExperimentPause(Params,Neuro,Data);
+        LastPredictTime = Neuro.LastUpdateTime;
+    end
+    
+    % Update Screen
+    if (tim-LastPredictTime) > 1/Params.ScreenRefreshRate,
+        % time
+        dt = tim - LastPredictTime;
+        TotalTime = TotalTime + dt;
+        dt_vec(end+1) = dt;
+        LastPredictTime = tim;
+        Data.Time(1,end+1) = tim;
+        
+        % grab and process neural data
+        if ((tim-Neuro.LastUpdateTime)>1/Params.UpdateRate),
+            dT = tim-Neuro.LastUpdateTime;
+            dT_vec(end+1) = dT;
+            Neuro.LastUpdateTime = tim;
+            if Params.BLACKROCK,
+                [Neuro,Data] = NeuroPipeline(Neuro,Data);
+                Data.NeuralTime(1,end+1) = tim;
+            elseif Params.GenNeuralFeaturesFlag,
+                Neuro.NeuralFeatures = VelToNeuralFeatures(Params);
+                Data.NeuralFeatures{end+1} = Neuro.NeuralFeatures;
+                Data.NeuralTime(1,end+1) = tim;
             end
         end
-
-        % end if takes too long
-        if TotalTime > Params.MaxReachTime,
-            done = 1;
-            Data.ErrorID = 3;
-            Data.ErrorStr = 'ReachTarget';
-            fprintf('\nERROR: %s\n',Data.ErrorStr)
+        
+        if Params.VisMvmt.Flag,
+            % Drawing
+            pos = Params.VisMvmt.Traj(ct,:);
+            if ct<size(Params.VisMvmt.Traj,1)
+                ct = ct + 1;
+                Screen('FrameOval', Params.WPTR, ... % Start Pos
+                    Params.VisMvmt.Color, ...
+                    VisMvmtStartRect)
+                Screen('FrameOval', Params.WPTR, ... % End Pos
+                    Params.VisMvmt.Color, ...
+                    VisMvmtEndRect)
+                Rect([1,3]) = Params.VisMvmt.Rect([1,3]) + pos(1) + Params.Center(1); % add x-pos
+                Rect([2,4]) = Params.VisMvmt.Rect([2,4]) + pos(2) + Params.Center(2); % add y-pos
+                Screen('FillOval', Params.WPTR, ... % End Pos
+                    Params.VisMvmt.Color, ...
+                    Rect)
+            end
+            Screen('FillOval', Params.WPTR, ... % Start Light
+                Params.VisCue.StartColor, ...
+                VisCueRect)
+            
+            Screen('Flip', Params.WPTR);
         end
-
-        % end if in start target for hold time
-        if InTargetTotalTime > Params.TargetHoldTime,
-            done = 1;
-        end
-    end % Reach Target Loop
-end % only complete if no errors
+    end
+    
+    % end if takes too long
+    if TotalTime > Params.MovementInterval,
+        done = 1;
+    end
+    
+end % Movement Loop
 
 
 %% Completed Trial - Give Feedback
-Screen('Flip', Params.WPTR);
 
 % output update times
 if Params.Verbose,
@@ -217,19 +246,6 @@ if Params.Verbose,
         Params.ScreenRefreshRate,mean(1./dt_vec),std(1./dt_vec))
     fprintf('System Update Frequency: Goal=%iHz, Actual=%.2fHz (+/-%.2fHz)\n',...
         Params.UpdateRate,mean(1./dT_vec),std(1./dT_vec))
-end
-
-% output feedback
-if Data.ErrorID==0,
-    fprintf('\nSUCCESS\n')
-    if Params.FeedbackSound,
-        sound(Params.RewardSound,Params.RewardSoundFs)
-    end
-else
-    if Params.FeedbackSound,
-        sound(Params.ErrorSound,Params.ErrorSoundFs)
-    end
-    WaitSecs(Params.ErrorWaitTime);
 end
 
 end % RunTrial

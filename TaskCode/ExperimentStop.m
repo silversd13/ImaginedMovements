@@ -1,8 +1,9 @@
-function ExperimentStop(fromPause)
+function ExperimentStop(fromPause,Params)
 if ~exist('fromPause', 'var'), fromPause = 0; end
 
-% Close Screen
+% Close Screen & Audio
 Screen('CloseAll');
+PsychPortAudio('Close', Params.PAPTR);
 
 % quit
 if fromPause, keyboard; end

@@ -14,7 +14,10 @@ while ~done,
     tim = GetSecs;
     
     % for pausing and quitting expt
-    if CheckPause, ExperimentPause(Params); end
+    if CheckPause,
+        [Neuro,~] = ExperimentPause(Params,Neuro);
+        LastPredictTime = Neuro.LastUpdateTime;
+    end
     
     % Grab data every Xsecs
     if (tim-tlast) > 1/Params.ScreenRefreshRate,

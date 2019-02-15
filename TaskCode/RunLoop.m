@@ -1,8 +1,6 @@
-function [Neuro,KF] = RunLoop(Params,Neuro,TaskFlag,DataDir,KF)
+function Neuro = RunLoop(Params,Neuro,DataDir)
 % Defines the structure of collected data on each trial
 % Loops through blocks and trials within blocks
-
-global Cursor
 
 %% Start Experiment
 DataFields = struct(...
@@ -10,86 +8,57 @@ DataFields = struct(...
     'Trial',NaN,...
     'TrialStartTime',NaN,...
     'TrialEndTime',NaN,...
-    'TargetPosition',NaN,...
     'Time',[],...
-    'CursorAssist',[],...
-    'CursorState',[],...
-    'IntendedCursorState',[],...
-    'KalmanFilter',[],...
+    'Movement','',...
     'NeuralTime',[],...
     'NeuralTimeBR',[],...
     'NeuralSamps',[],...
     'NeuralFeatures',{{}},...
-    'NeuralFactors',{{}},...
     'ProcessedData',{{}},...
-    'ErrorID',0,...
-    'ErrorStr','',...
     'Events',[]...
     );
 
-switch TaskFlag,
-    case 1, NumBlocks = Params.NumImaginedBlocks;
-    case 2, NumBlocks = Params.NumAdaptBlocks;
-    case 3, NumBlocks = Params.NumFixedBlocks;
-end
-
 %%  Loop Through Blocks of Trials
+Movements = Params.Movements;
 Trial = 0;
-TrialBatch = {};
-tlast = GetSecs;
-Cursor.LastPredictTime = tlast;
-Cursor.LastUpdateTime = tlast;
-Cursor.State = [0,0,0,0,1]';
-Cursor.IntendedState = [0,0,0,0,1]';
-for Block=1:NumBlocks, % Block Loop
+for Block=1:Params.NumBlocks, % Block Loop
+    
+    if Params.MvmtSelectionFlag==2 && mod(Block-1,length(Params.Movements))==0,
+        Movements = Params.Movements(randperm(length(Params.Movements)));
+    end
+    MvmtIdx = Params.MvmtSelection(length(Params.Movements),Block);
+    Movement = Movements{MvmtIdx};
+    
+    Instructions = [...
+        '\n\nImagined Movements: '...
+        sprintf('%s\n\n',Movement)...
+        'Move at the Go Cue!'...
+        '\nAt any time, you can press ''p'' to briefly pause the task.'...
+        '\n\nPress the ''Space Bar'' to begin!' ];
+    
+    InstructionScreen(Params,Instructions);
+    mkdir(fullfile(Params.Datadir,Movement));
 
     for TrialPerBlock=1:Params.NumTrialsPerBlock, % Trial Loop
         % update trial
         Trial = Trial + 1;
         
-        % if smooth batch on & enough time has passed, update KF btw trials
-        if TaskFlag==2 && Neuro.CLDA.Type==2,
-            TrialBatch{end+1} = sprintf('Data%04i.mat', Trial);
-            if (GetSecs-tlast)>Neuro.CLDA.UpdateTime,
-                Neuro.KF.CLDA = Params.CLDA;
-                if Neuro.DimRed.Flag,
-                    KF = FitKF(Params,fullfile(Params.Datadir,'BCI_CLDA'),2,...
-                        KF,TrialBatch,Neuro.DimRed.F);
-                else,
-                    KF = FitKF(Params,fullfile(Params.Datadir,'BCI_CLDA'),2,...
-                        KF,TrialBatch);
-                end
-                tlast = GetSecs;
-                TrialBatch = {};
-                % decrease assistance after batch update
-                if Cursor.Assistance>0,
-                    Cursor.Assistance = Cursor.Assistance - Cursor.DeltaAssistance;
-                    Cursor.Assistance = max([Cursor.Assistance,0]);
-                end
-            end
-        elseif TaskFlag==2 && Neuro.CLDA.Type==3,
-            % decrease assistance after batch update
-            if Cursor.Assistance>0,
-                Cursor.Assistance = Cursor.Assistance - Cursor.DeltaAssistance;
-                Cursor.Assistance = max([Cursor.Assistance,0]);
-            end
-        end
-        
         % set up trial
         TrialData = DataFields;
         TrialData.Block = Block;
         TrialData.Trial = Trial;
-        TrialData.TargetPosition = Params.TargetFunc();
-        TrialData.KalmanFilter = KF;
+        TrialData.Movement = Movement;
 
         % Run Trial
         TrialData.TrialStartTime  = GetSecs;
-        [TrialData,Neuro,KF] = RunTrial(TrialData,Params,Neuro,TaskFlag,KF);
+        [TrialData,Neuro] = RunTrial(TrialData,Params,Neuro);
         TrialData.TrialEndTime    = GetSecs;
                 
         % Save Data from Single Trial
         save(...
-            fullfile(DataDir,sprintf('Data%04i.mat',Trial)),...
+            fullfile(DataDir,Movement,...
+            sprintf('Data_Block%02i_TrialBlock%02i_Trial%04i.mat',...
+            Block,TrialPerBlock,Trial)),...
             'TrialData',...
             '-v7.3','-nocompression');
         
@@ -97,6 +66,10 @@ for Block=1:NumBlocks, % Block Loop
     
     % Give Feedback for Block
     WaitSecs(Params.InterBlockInterval);
+    
+    % Make some figures based on all trials
+    fprintf('\n\nMaking ERP plots\n\n')
+    %PlotERPs(fullfile(Params.Datadir,Movement),'off')
     
 end % Block Loop
 

@@ -1,8 +1,6 @@
 function [Neuro,Data] = ExperimentPause(Params,Neuro,Data)
 % Display text then wait for subject to resume experiment
 
-global Cursor
-
 % Pause Screen
 tex = 'Paused... Press ''p'' to continue, ''escape'' to quit, or ''d'' to debug';
 DrawFormattedText(Params.WPTR, tex,'center','center',255);
@@ -22,7 +20,7 @@ while 1, % pause until subject presses p again or quits
         break;
     end
     if keyCode(KbName('escape'))==1 || keyCode(KbName('q'))==1,
-        ExperimentStop(1); % quit experiment
+        ExperimentStop(1,Params); % quit experiment
     end
     if keyCode(KbName('d'))==1,
         keyboard; % quit experiment
@@ -30,16 +28,12 @@ while 1, % pause until subject presses p again or quits
     
     % grab and process neural data
     tim = GetSecs;
-    if ((tim-Cursor.LastUpdateTime)>1/Params.UpdateRate),
-        Cursor.LastUpdateTime = tim;
-        Cursor.LastPredictTime = tim;
+    if ((tim-Neuro.LastUpdateTime)>1/Params.UpdateRate),
+        Neuro.LastUpdateTime = tim;
         if Params.BLACKROCK,
-            [Neuro,Data] = NeuroPipeline(Neuro,Data);
-            Data.NeuralTime(1,end+1) = tim;
+            [Neuro,~] = NeuroPipeline(Neuro,Data);
         elseif Params.GenNeuralFeaturesFlag,
             Neuro.NeuralFeatures = VelToNeuralFeatures(Params);
-            Data.NeuralFeatures{end+1} = Neuro.NeuralFeatures;
-            Data.NeuralTime(1,end+1) = tim;
         end
     end
 end

@@ -13,7 +13,7 @@ while (1) % pause until subject presses spacebar to continue
         keyCode(KbName('space'))=0;
         break;
     elseif keyCode(KbName('escape'))==1,
-        ExperimentStop(1);
+        ExperimentStop(1,Params);
     end
 end
 
