@@ -68,8 +68,7 @@ for Block=1:Params.NumBlocks, % Block Loop
     WaitSecs(Params.InterBlockInterval);
     
     % Make some figures based on all trials
-    fprintf('\n\nMaking ERP plots\n\n')
-    %PlotERPs(fullfile(Params.Datadir,Movement),'off')
+    PlotERPs(fullfile(Params.Datadir,Movement),'off')
     
 end % Block Loop
 

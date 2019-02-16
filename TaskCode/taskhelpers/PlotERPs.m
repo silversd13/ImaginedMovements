@@ -6,6 +6,8 @@ function PlotERPs(datadir,vis)
 % datadir - directory of data (also saves fig there)
 % vis - visibility of plot (if off save w/o plot in matlab) {'on','off'}
 tic;
+fprintf('\n\nMaking ERP plots...')
+    
 % grab data trial data
 datafiles = dir(fullfile(datadir,'Data*.mat'));
 Y = [];
@@ -34,7 +36,9 @@ Nch = size(Y,2);
 limch = ch_layout(R,1);
 
 % go through each feature and plot erps
-for i=1:size(Y,1),
+% feature_list = 1:size(Y,1); % all features
+feature_list = size(Y,1); % high gamma
+for i=feature_list,
     fig = figure('units','normalized','position',[.1,.1,.8,.8],'visible',vis);
     ax = tight_subplot(R,C,[.01,.01],[.05,.01],[.03,.01]);
     
@@ -67,8 +71,10 @@ for i=1:size(Y,1),
     end
     toc
     % save plot
-    saveas(fig,fullfile(datadir,sprintf('ERPs_Feature%i',i),'jpg'))
+    saveas(fig,fullfile(datadir,sprintf('ERPs_Feature%i',i)),'png')
     toc
 end
+
+fprintf('Done.\n\n')
 
 end % PlotHeatMap

@@ -16,7 +16,6 @@ while ~done,
     % for pausing and quitting expt
     if CheckPause,
         [Neuro,~] = ExperimentPause(Params,Neuro);
-        LastPredictTime = Neuro.LastUpdateTime;
     end
     
     % Grab data every Xsecs

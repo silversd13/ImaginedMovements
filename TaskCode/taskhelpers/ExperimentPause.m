@@ -1,6 +1,10 @@
 function [Neuro,Data] = ExperimentPause(Params,Neuro,Data)
 % Display text then wait for subject to resume experiment
 
+if ~exist('Data','var'),
+    Data.Events = [];
+end
+
 % Pause Screen
 tex = 'Paused... Press ''p'' to continue, ''escape'' to quit, or ''d'' to debug';
 DrawFormattedText(Params.WPTR, tex,'center','center',255);

@@ -26,10 +26,8 @@ VisCueRect([1,3]) = Params.VisCue.Rect([1,3]) + Params.VisCue.Position(1) + Para
 VisCueRect([2,4]) = Params.VisCue.Rect([2,4]) + Params.VisCue.Position(2) + Params.Center(2); % add y-pos
 
 % Visual Mvmt Cue
-VisMvmtStartRect([1,3]) = Params.VisMvmt.Rect([1,3]) + Params.VisMvmt.StartPos(1) + Params.Center(1); % add x-pos
-VisMvmtStartRect([2,4]) = Params.VisMvmt.Rect([2,4]) + Params.VisMvmt.StartPos(2) + Params.Center(2); % add y-pos
-VisMvmtEndRect([1,3]) = Params.VisMvmt.Rect([1,3]) + Params.VisMvmt.EndPos(1) + Params.Center(1); % add x-pos
-VisMvmtEndRect([2,4]) = Params.VisMvmt.Rect([2,4]) + Params.VisMvmt.EndPos(2) + Params.Center(2); % add y-pos
+VisMvmtFrameRect([1,3]) = Params.VisMvmt.FrameRect([1,3]) + Params.Center(1); % add x-pos
+VisMvmtFrameRect([2,4]) = Params.VisMvmt.FrameRect([2,4]) + Params.Center(2); % add y-pos
 
 %% Inter Trial Interval
 if Params.InterTrialInterval>0,
@@ -93,6 +91,11 @@ Data.Events(end).Str  = 'Hold Interval';
 
 % Stop Movement Cue (visual only)
 Screen('FillOval', Params.WPTR, Params.VisCue.StopColor, VisCueRect)
+if Params.VisMvmt.Flag,
+    Screen('FillRect', Params.WPTR, ... % End Pos
+        Params.VisMvmt.Color, ...
+        VisMvmtFrameRect)
+end
 Screen('Flip', Params.WPTR);
 
 done = 0;
@@ -131,20 +134,6 @@ while ~done,
             end
         end
         
-        if Params.VisMvmt.Flag,
-            % Drawing
-            Screen('FillOval', Params.WPTR, ... % Stop Light
-                Params.VisCue.StopColor, ...
-                VisCueRect)
-            Screen('FillOval', Params.WPTR, ... % Start Pos
-                Params.VisMvmt.Color, ...
-                VisMvmtStartRect)
-            Screen('FrameOval', Params.WPTR, ... % End Pos
-                Params.VisMvmt.Color, ...
-                VisMvmtEndRect)
-
-            Screen('Flip', Params.WPTR);
-        end
     end
     
     % end if takes too long
@@ -210,15 +199,13 @@ while ~done,
             pos = Params.VisMvmt.Traj(ct,:);
             if ct<size(Params.VisMvmt.Traj,1)
                 ct = ct + 1;
-                Screen('FrameOval', Params.WPTR, ... % Start Pos
+                Screen('FrameRect', Params.WPTR, ... % Full Time
                     Params.VisMvmt.Color, ...
-                    VisMvmtStartRect)
-                Screen('FrameOval', Params.WPTR, ... % End Pos
-                    Params.VisMvmt.Color, ...
-                    VisMvmtEndRect)
-                Rect([1,3]) = Params.VisMvmt.Rect([1,3]) + pos(1) + Params.Center(1); % add x-pos
-                Rect([2,4]) = Params.VisMvmt.Rect([2,4]) + pos(2) + Params.Center(2); % add y-pos
-                Screen('FillOval', Params.WPTR, ... % End Pos
+                    VisMvmtFrameRect)
+                Rect = VisMvmtFrameRect;
+                Rect(2) = pos(2) + Params.Center(2); % adjust height
+                Rect
+                Screen('FillRect', Params.WPTR, ... % Current Time
                     Params.VisMvmt.Color, ...
                     Rect)
             end

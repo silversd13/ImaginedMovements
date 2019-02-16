@@ -59,7 +59,7 @@ mkdir(datadir);
 %% Timing
 Params.ScreenRefreshRate = 10; % Hz
 Params.UpdateRate = 10; % Hz
-Params.BaselineTime = 10; % secs
+Params.BaselineTime = 1; % secs
 
 %% Trial and Block Types
 Params.NumBlocks            = 10;
@@ -101,15 +101,17 @@ Params.AudCue.Beep = MakeBeep(500, Params.AudCue.Time, Params.AudCue.Fs);
 
 %% Visual Movement Timing
 Params.VisMvmt.Flag = true;
-Params.VisMvmt.Size = 10;
-Params.VisMvmt.Rect = ...
-    [-Params.VisMvmt.Size -Params.VisMvmt.Size ...
-    +Params.VisMvmt.Size +Params.VisMvmt.Size];
+Params.VisMvmt.Width = 10; % 1/2
 Params.VisMvmt.Color = [66,217,244];
-Params.VisMvmt.StartPos = [200,100];
-Params.VisMvmt.EndPos = [200,-300];
+Params.VisMvmt.EndPos = 100;
+Params.VisMvmt.StartPos = -300;
+Params.VisMvmt.Offset = 200;
+Params.VisMvmt.FrameRect = ...
+    [-Params.VisMvmt.Width+Params.VisMvmt.Offset +Params.VisMvmt.StartPos ...
+    +Params.VisMvmt.Width+Params.VisMvmt.Offset +Params.VisMvmt.EndPos];
 Params.VisMvmt.Traj = GenerateCursorTraj(...
-    Params.VisMvmt.StartPos,Params.VisMvmt.EndPos,...
+    [Params.VisMvmt.Offset,Params.VisMvmt.StartPos],...
+    [Params.VisMvmt.Offset,Params.VisMvmt.EndPos],...
     Params.MovementTime,Params);
 
 %% BlackRock Params
