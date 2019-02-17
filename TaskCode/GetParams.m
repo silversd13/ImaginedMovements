@@ -79,6 +79,15 @@ Params.Movements = {...
     'Elbow Flexion'
     'Elbow Extension'
     };
+Params.MovementMovDir = fullfile(projectdir,'TaskCode','movements');
+Params.MovementMovFiles = {...
+    'wrist_flexion.mov'
+    'Wrist Extension'
+    'Elbow Flexion'
+    'Elbow Extension'
+    };
+Params.MovementMovRect = [-200 -200 200 200];
+
 Params.MvmtSelectionFlag = 2; % 1-in order, 2-pseudorandom, 3-random, 
 switch Params.MvmtSelectionFlag,
     case {1,2}, Params.MvmtSelection = @(n,B) mod(B-1,n)+1;

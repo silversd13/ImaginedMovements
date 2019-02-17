@@ -23,19 +23,40 @@ Movements = Params.Movements;
 Trial = 0;
 for Block=1:Params.NumBlocks, % Block Loop
     
+    % select movement for block
     if Params.MvmtSelectionFlag==2 && mod(Block-1,length(Params.Movements))==0,
         Movements = Params.Movements(randperm(length(Params.Movements)));
     end
-    MvmtIdx = Params.MvmtSelection(length(Params.Movements),Block);
+    MvmtIdx = 1;Params.MvmtSelection(length(Params.Movements),Block);
     Movement = Movements{MvmtIdx};
     
+    % Display Instructions
     Instructions = [...
         '\n\nImagined Movements: '...
-        sprintf('%s\n\n',Movement)...
-        'Move at the Go Cue!'...
+        sprintf('%s\n\n',Movement)];
+    InstructionScreen(Params,Instructions);
+    
+    % Display movie of movement
+    mov_file = fullfile(Params.MovementMovDir,Params.MovementMovFiles{MvmtIdx});
+    [mov_ptr,~,~,w,h] = Screen('OpenMovie', Params.WPTR, mov_file);
+    [w,h]
+    Screen('PlayMovie', mov_ptr, 1);
+    while 1,
+        tex = Screen('GetMovieImage', Params.WPTR, mov_ptr);
+        if tex<=0, break; end
+        Screen('DrawTexture', Params.WPTR, tex, [], Params.MovementMovRect, 180);
+        Screen('Flip', Params.WPTR);
+        Screen('Close', tex);
+    end
+    Screen('PlayMovie', mov_ptr, 0);
+    Screen('CloseMovie', mov_ptr);
+    
+    % Display Instructions
+    Instructions = [...
+        sprintf('\n\n%s\n\n',Movement)...
+        'Time your movement to the bar.'...
         '\nAt any time, you can press ''p'' to briefly pause the task.'...
         '\n\nPress the ''Space Bar'' to begin!' ];
-    
     InstructionScreen(Params,Instructions);
     mkdir(fullfile(Params.Datadir,Movement));
 

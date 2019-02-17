@@ -114,6 +114,10 @@ InitializePsychSound(1);
 Params.PAPTR = PsychPortAudio('Open', [], 1, 1, 44100, 1);
 PsychPortAudio('Volume', Params.PAPTR, 0.25);
 
+%% Center Rectangle For Playing Movies
+Params.MovementMovRect([1,3]) = Params.MovementMovRect([1,3]) + Params.Center(1);
+Params.MovementMovRect([2,4]) = Params.MovementMovRect([2,4]) + Params.Center(2);
+
 %% Start
 try
     % Baseline 
