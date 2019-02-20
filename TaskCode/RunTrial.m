@@ -204,7 +204,6 @@ while ~done,
                     VisMvmtFrameRect)
                 Rect = VisMvmtFrameRect;
                 Rect(2) = pos(2) + Params.Center(2); % adjust height
-                Rect
                 Screen('FillRect', Params.WPTR, ... % Current Time
                     Params.VisMvmt.Color, ...
                     Rect)

@@ -88,7 +88,7 @@ Params.MovementMovFiles = {...
     };
 Params.MovementMovRect = [-200 -200 200 200];
 
-Params.MvmtSelectionFlag = 2; % 1-in order, 2-pseudorandom, 3-random, 
+Params.MvmtSelectionFlag = 1; % 1-in order, 2-pseudorandom, 3-random, 
 switch Params.MvmtSelectionFlag,
     case {1,2}, Params.MvmtSelection = @(n,B) mod(B-1,n)+1;
     case 3, Params.MvmtSelection = @(n,B) randi(n);

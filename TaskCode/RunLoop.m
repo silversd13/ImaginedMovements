@@ -39,7 +39,6 @@ for Block=1:Params.NumBlocks, % Block Loop
     % Display movie of movement
     mov_file = fullfile(Params.MovementMovDir,Params.MovementMovFiles{MvmtIdx});
     [mov_ptr,~,~,w,h] = Screen('OpenMovie', Params.WPTR, mov_file);
-    [w,h]
     Screen('PlayMovie', mov_ptr, 1);
     while 1,
         tex = Screen('GetMovieImage', Params.WPTR, mov_ptr);

@@ -20,7 +20,6 @@ while 1, % pause until subject presses p again or quits
     [~, ~, keyCode, ~] = KbCheck;
     if keyCode(KbName('p'))==1,
         keyCode(KbName('p'))=0; % set to 0 to avoid multiple pauses in a row
-        fprintf('\b') % remove input keys
         break;
     end
     if keyCode(KbName('escape'))==1 || keyCode(KbName('q'))==1,
