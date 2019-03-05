@@ -29,7 +29,7 @@ if IsWin,
 elseif IsOSX,
     projectdir = '/Users/daniel/Projects/ImaginedMovements/';
 else,
-    projectdir = '/home/dsilver/Projects/ImaginedMovements/';
+    projectdir = '~/Projects/ImaginedMovements/';
 end
 addpath(genpath(fullfile(projectdir,'TaskCode')));
 
@@ -70,7 +70,7 @@ Params.InterTrialInterval   = .5;
 Params.InterBlockInterval   = 0;
 Params.HoldInterval         = 2;
 Params.MovementInterval     = 3;
-Params.MovementTime         = .75*Params.MovementInterval;
+Params.MovementTime         = 2/3*Params.MovementInterval;
 
 %% Movements
 Params.Movements = {...
