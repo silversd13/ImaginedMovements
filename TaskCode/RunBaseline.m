@@ -24,7 +24,7 @@ while ~done,
         tlast = tim;
         
         % grab and process neural data
-        if Params.BLACKROCK && ((tim-Neuro.LastUpdateTime)>1/Params.NeuralRefreshRate),
+        if Params.BLACKROCK && ((tim-Neuro.LastUpdateTime)>1/Params.UpdateRate),
             Neuro.LastUpdateTime = tim;
             Neuro = NeuroPipeline(Neuro);
             % update command line with progress
