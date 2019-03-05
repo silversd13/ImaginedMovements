@@ -1,4 +1,4 @@
-function Neuro = RunTask(Params,Neuro)
+function [Neuro,Params] = RunTask(Params,Neuro)
 % Explains the task to the subject, and serves as a reminder for pausing
 % and quitting the experiment (w/o killing matlab or something)
 
@@ -9,7 +9,7 @@ fprintf('  %i Blocks (%i Total Trials)\n',...
     Params.NumBlocks*Params.NumTrialsPerBlock)
 fprintf('  Saving data to %s\n\n',Params.Datadir)
 
-Neuro = RunLoop(Params,Neuro,Params.Datadir);
+[Neuro,Params] = RunLoop(Params,Neuro,Params.Datadir);
 
 
 end % RunTask

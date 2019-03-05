@@ -127,7 +127,7 @@ try
     
     % Imagined Cursor Movements Loop
     if Params.NumBlocks>0,
-        Neuro = RunTask(Params,Neuro);
+        [Neuro,Params] = RunTask(Params,Neuro);
     end
     
     % Pause and Finish!

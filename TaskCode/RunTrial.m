@@ -1,4 +1,4 @@
-function [Data, Neuro] = RunTrial(Data,Params,Neuro)
+function [Data, Neuro, Params] = RunTrial(Data,Params,Neuro)
 % Runs a trial, saves useful data along the way
 % Each trial contains the following pieces
 % 1) Inter-trial interval
@@ -46,7 +46,7 @@ if Params.InterTrialInterval>0,
 
         % for pausing and quitting expt
         if CheckPause,
-            [Neuro,Data] = ExperimentPause(Params,Neuro,Data);
+            [Neuro,Data,Params] = ExperimentPause(Params,Neuro,Data);
             LastPredictTime = Neuro.LastUpdateTime;
         end
 
@@ -106,7 +106,7 @@ while ~done,
     
     % for pausing and quitting expt
     if CheckPause,
-        [Neuro,Data] = ExperimentPause(Params,Neuro,Data);
+        [Neuro,Data,Params] = ExperimentPause(Params,Neuro,Data);
         LastPredictTime = Neuro.LastUpdateTime;
     end
     
@@ -166,7 +166,7 @@ while ~done,
     
     % for pausing and quitting expt
     if CheckPause,
-        [Neuro,Data] = ExperimentPause(Params,Neuro,Data);
+        [Neuro,Data,Params] = ExperimentPause(Params,Neuro,Data);
         LastPredictTime = Neuro.LastUpdateTime;
     end
     
