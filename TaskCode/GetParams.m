@@ -66,25 +66,28 @@ Params.NumBlocks            = 10;
 Params.NumTrialsPerBlock    = 3;
 
 %% Hold Times
-Params.InterTrialInterval   = .5;
-Params.InterBlockInterval   = 0;
+Params.InterTrialInterval   = 5;
 Params.HoldInterval         = 2;
-Params.MovementInterval     = 3;
-Params.MovementTime         = 2/3*Params.MovementInterval;
+Params.MovementInterval     = 5;
+Params.MovementTime         = 4/5*Params.MovementInterval;
 
 %% Movements
 Params.Movements = {...
-    'Wrist Flexion'
-    'Wrist Extension'
-    'Elbow Flexion'
-    'Elbow Extension'
+    'Move Your Left Arm'
+    'Move Your Right Arm'
+    'Grasp Your Right Hand'
+    'Say "OK"'
+    'Shake Your Head (No)'
+    'Nod Your Head (Yes)'
     };
 Params.MovementMovDir = fullfile(projectdir,'TaskCode','movements');
 Params.MovementMovFiles = {...
-    'wrist_flexion.mov'
-    'Wrist Extension'
-    'Elbow Flexion'
-    'Elbow Extension'
+    'nan.mov'
+    'nan.mov'
+    'nan.mov'
+    'nan.mov'
+    'nan.mov'
+    'nan.mov'
     };
 Params.MovementMovRect = [-200 -200 200 200];
 
@@ -104,6 +107,7 @@ Params.VisCue.Rect = ...
     +Params.VisCue.Size +Params.VisCue.Size];
 
 %% Auditory Go Cue
+Params.AudCue.Flag = false;
 Params.AudCue.Fs = 44100; % hz
 Params.AudCue.Time = .5; % secs
 Params.AudCue.Beep = MakeBeep(500, Params.AudCue.Time, Params.AudCue.Fs);

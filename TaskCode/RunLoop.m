@@ -27,28 +27,31 @@ for Block=1:Params.NumBlocks, % Block Loop
     if Params.MvmtSelectionFlag==2 && mod(Block-1,length(Params.Movements))==0,
         Movements = Params.Movements(randperm(length(Params.Movements)));
     end
-    MvmtIdx = 1;Params.MvmtSelection(length(Params.Movements),Block);
+    MvmtIdx = Params.MvmtSelection(length(Params.Movements),Block);
     Movement = Movements{MvmtIdx};
-    
-    % Display Instructions
-    Instructions = [...
-        '\n\nImagined Movements: '...
-        sprintf('%s\n\n',Movement)];
-    InstructionScreen(Params,Instructions);
     
     % Display movie of movement
     mov_file = fullfile(Params.MovementMovDir,Params.MovementMovFiles{MvmtIdx});
-    [mov_ptr,~,~,w,h] = Screen('OpenMovie', Params.WPTR, mov_file);
-    Screen('PlayMovie', mov_ptr, 1);
-    while 1,
-        tex = Screen('GetMovieImage', Params.WPTR, mov_ptr);
-        if tex<=0, break; end
-        Screen('DrawTexture', Params.WPTR, tex, [], Params.MovementMovRect, 180);
-        Screen('Flip', Params.WPTR);
-        Screen('Close', tex);
+    if exist(mov_file,'file'),
+        % Display Instructions
+        Instructions = [...
+            '\n\nImagined Movements: '...
+            sprintf('%s\n\n',Movement)];
+        InstructionScreen(Params,Instructions);
+        
+        % play movie
+        [mov_ptr,~,~,w,h] = Screen('OpenMovie', Params.WPTR, mov_file);
+        Screen('PlayMovie', mov_ptr, 1);
+        while 1,
+            tex = Screen('GetMovieImage', Params.WPTR, mov_ptr);
+            if tex<=0, break; end
+            Screen('DrawTexture', Params.WPTR, tex, [], Params.MovementMovRect, 180);
+            Screen('Flip', Params.WPTR);
+            Screen('Close', tex);
+        end
+        Screen('PlayMovie', mov_ptr, 0);
+        Screen('CloseMovie', mov_ptr);
     end
-    Screen('PlayMovie', mov_ptr, 0);
-    Screen('CloseMovie', mov_ptr);
     
     % Display Instructions
     Instructions = [...
@@ -83,9 +86,6 @@ for Block=1:Params.NumBlocks, % Block Loop
             '-v7.3','-nocompression');
         
     end % Trial Loop
-    
-    % Give Feedback for Block
-    WaitSecs(Params.InterBlockInterval);
     
     % Make some figures based on all trials
     PlotERPs(fullfile(Params.Datadir,Movement),'off')

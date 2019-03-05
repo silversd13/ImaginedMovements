@@ -109,10 +109,11 @@ Screen('TextFont',Params.WPTR, 'Arial');
 Screen('TextSize',Params.WPTR, 28);
 
 %% Initialize Sound
-InitializePsychSound(1);
-% Params.PAPTR = PsychPortAudio('Open', [], 1, 1, Params.AudCue.Fs, 1);
-Params.PAPTR = PsychPortAudio('Open', [], 1, 1, 44100, 1);
-PsychPortAudio('Volume', Params.PAPTR, 0.25);
+if Params.AudCue.Flag,
+    InitializePsychSound(1);
+    Params.PAPTR = PsychPortAudio('Open', [], 1, 1, 44100, 1);
+    PsychPortAudio('Volume', Params.PAPTR, 0.25);
+end
 
 %% Center Rectangle For Playing Movies
 Params.MovementMovRect([1,3]) = Params.MovementMovRect([1,3]) + Params.Center(1);
@@ -135,7 +136,9 @@ try
     
 catch ME, % handle errors gracefully
     Screen('CloseAll')
-    PsychPortAudio('Close', Params.PAPTR);
+    if Params.AudCue.Flag,
+        PsychPortAudio('Close', Params.PAPTR);
+    end
     for i=length(ME.stack):-1:1,
         if i==1,
             errorMessage = sprintf('Error in function %s() at line %d.\n\nError Message:\n%s\n\n', ...

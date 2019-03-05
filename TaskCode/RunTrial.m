@@ -150,11 +150,12 @@ Data.Events(end).Str  = 'Movement Start';
 
 % Movement Cue (visual and auditory)
 % audio buffer
-PsychPortAudio('FillBuffer', Params.PAPTR, Params.AudCue.Beep);
+if Params.AudCue.Flag,
+    PsychPortAudio('FillBuffer', Params.PAPTR, Params.AudCue.Beep);
+    PsychPortAudio('Start', Params.PAPTR, 1, 0, 1);
+end
 % screen buffer
 Screen('FillOval', Params.WPTR, Params.VisCue.StartColor, VisCueRect)
-% cues
-PsychPortAudio('Start', Params.PAPTR, 1, 0, 1);
 Screen('Flip', Params.WPTR);
 
 done = 0;

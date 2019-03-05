@@ -3,7 +3,9 @@ if ~exist('fromPause', 'var'), fromPause = 0; end
 
 % Close Screen & Audio
 Screen('CloseAll');
-PsychPortAudio('Close', Params.PAPTR);
+if Params.AudCue.Flag,
+    PsychPortAudio('Close', Params.PAPTR);
+end
 
 % quit
 if fromPause, keyboard; end
