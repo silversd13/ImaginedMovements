@@ -125,8 +125,9 @@ Params.VisMvmt.Traj = GenerateCursorTraj(...
 
 %% BlackRock Params
 Params.GenNeuralFeaturesFlag = true;
-Params.ZscoreRawFlag = true;
-Params.SaveProcessed = false;
+Params.ZscoreRawFlag         = true;
+Params.SaveProcessed         = false;
+Params.SaveRaw               = true;
 
 Params.Fs = 1000;
 Params.NumChannels = 128;

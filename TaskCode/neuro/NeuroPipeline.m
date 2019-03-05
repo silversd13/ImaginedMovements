@@ -20,6 +20,9 @@ if exist('Data','var') && ~isempty(Data),
     Data.NeuralTimeBR(1,end+1) = Neuro.TimeStamp;
     Data.NeuralSamps(1,end+1) = Neuro.NumSamps;
     Data.NeuralFeatures{end+1} = Neuro.NeuralFeatures;
+    if Neuro.SaveRaw,
+        Data.BroadbandData{end+1} = Neuro.BroadbandData;
+    end
     if Neuro.SaveProcessed,
         Data.ProcessedData{end+1} = Neuro.FilteredData;
     end
