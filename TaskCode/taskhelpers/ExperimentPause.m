@@ -14,7 +14,7 @@ Screen('Flip', Params.WPTR);
 Data.Events(end+1).Time = GetSecs;
 Data.Events(end).Str  = 'Pause';
 if Params.SerialSync, fprintf(Params.SerialPtr, '%s\n', 'P0'); end
-if Params.ArduinoSync, PulseArduino(length(Data.Events)); end
+if Params.ArduinoSync, PulseArduino(Params.ArduinoPtr,Params.ArduinoPin,length(Data.Events)); end
 
 KbCheck;
 WaitSecs(.1);

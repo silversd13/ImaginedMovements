@@ -35,7 +35,7 @@ if Params.InterTrialInterval>0,
     Data.Events(end+1).Time = tstart;
     Data.Events(end).Str  = 'Inter Trial Interval';
     if Params.SerialSync, fprintf(Params.SerialPtr, '%s\n', 'ITI'); end
-    if Params.ArduinoSync, PulseArduino(length(Data.Events)); end
+    if Params.ArduinoSync, PulseArduino(Params.ArduinoPtr,Params.ArduinoPin,length(Data.Events)); end
     
     % Blank Screen
     Screen('Flip', Params.WPTR);
@@ -97,7 +97,7 @@ tstart  = GetSecs;
 Data.Events(end+1).Time = tstart;
 Data.Events(end).Str  = 'Hold Interval';
 if Params.SerialSync, fprintf(Params.SerialPtr, '%s\n', 'HI'); end
-if Params.ArduinoSync, PulseArduino(length(Data.Events)); end
+if Params.ArduinoSync, PulseArduino(Params.ArduinoPtr,Params.ArduinoPin,length(Data.Events)); end
 
 % Stop Movement Cue (visual only)
 Screen('FillOval', Params.WPTR, Params.VisCue.StopColor, VisCueRect)
@@ -164,7 +164,7 @@ tstart  = GetSecs;
 Data.Events(end+1).Time = tstart;
 Data.Events(end).Str  = 'Movement Start';
 if Params.SerialSync, fprintf(Params.SerialPtr, '%s\n', 'MS'); end
-if Params.ArduinoSync, PulseArduino(length(Data.Events)); end
+if Params.ArduinoSync, PulseArduino(Params.ArduinoPtr,Params.ArduinoPin,length(Data.Events)); end
 
 % Movement Cue (visual and auditory)
 % audio buffer

@@ -6,6 +6,7 @@ function ExperimentStart(Subject,BLACKROCK,DEBUG)
 %   remains unhidden
 
 %% Clear All and Close All
+clearvars
 clearvars -global -except Subject BLACKROCK DEBUG
 clc
 warning off
@@ -47,7 +48,7 @@ if Params.ArduinoSync,
     Params.ArduinoPtr = arduino;
     Params.ArduinoPin = 'D13';
     writeDigitalPin(Params.ArduinoPtr, Params.ArduinoPin, 0); % make sure the pin is at 0
-    PulseArduino(20);
+    PulseArduino(Params.ArduinoPtr,Params.ArduinoPin,20);
 end
 
 %% Neural Signal Processing

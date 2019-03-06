@@ -2,8 +2,8 @@ function ExperimentStop(fromPause,Params)
 if ~exist('fromPause', 'var'), fromPause = 0; end
 
 % final sync to blackrock
-fprintf(Params.SerialPtr, '%s\n', 'START');
-if Params.ArduinoSync, PulseArduino(length(Data.Events)); end
+if Params.SerialSync, fprintf(Params.SerialPtr, '%s\n', 'START'); end
+if Params.ArduinoSync, PulseArduino(Params.ArduinoPtr,Params.ArduinoPin,30); end
 
 % Close Screen & Audio & sync files
 Screen('CloseAll');
