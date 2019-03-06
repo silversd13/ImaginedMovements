@@ -34,7 +34,9 @@ if Params.InterTrialInterval>0,
     tstart  = GetSecs;
     Data.Events(end+1).Time = tstart;
     Data.Events(end).Str  = 'Inter Trial Interval';
-
+    if Params.SerialSync, fprintf(Params.SerialPtr, '%s\n', 'ITI'); end
+    if Params.ArduinoSync, PulseArduino(length(Data.Events)); end
+    
     % Blank Screen
     Screen('Flip', Params.WPTR);
 
@@ -72,8 +74,10 @@ if Params.InterTrialInterval>0,
                     Neuro.NeuralFeatures = VelToNeuralFeatures(Params);
                     if Params.BLACKROCK, % override
                         Data.NeuralFeatures{end} = Neuro.NeuralFeatures;
+                        Data.NeuralTime(1,end) = tim;
                     else,
                         Data.NeuralFeatures{end+1} = Neuro.NeuralFeatures;
+                        Data.NeuralTime(1,end+1) = tim;
                     end
                 end
             end
@@ -92,6 +96,8 @@ end % if there is an interval
 tstart  = GetSecs;
 Data.Events(end+1).Time = tstart;
 Data.Events(end).Str  = 'Hold Interval';
+if Params.SerialSync, fprintf(Params.SerialPtr, '%s\n', 'HI'); end
+if Params.ArduinoSync, PulseArduino(length(Data.Events)); end
 
 % Stop Movement Cue (visual only)
 Screen('FillOval', Params.WPTR, Params.VisCue.StopColor, VisCueRect)
@@ -136,8 +142,10 @@ while ~done,
                 Neuro.NeuralFeatures = VelToNeuralFeatures(Params);
                 if Params.BLACKROCK, % override
                     Data.NeuralFeatures{end} = Neuro.NeuralFeatures;
+                    Data.NeuralTime(1,end) = tim;
                 else,
                     Data.NeuralFeatures{end+1} = Neuro.NeuralFeatures;
+                    Data.NeuralTime(1,end+1) = tim;
                 end
             end
         end
@@ -155,6 +163,8 @@ end % Hold Interval
 tstart  = GetSecs;
 Data.Events(end+1).Time = tstart;
 Data.Events(end).Str  = 'Movement Start';
+if Params.SerialSync, fprintf(Params.SerialPtr, '%s\n', 'MS'); end
+if Params.ArduinoSync, PulseArduino(length(Data.Events)); end
 
 % Movement Cue (visual and auditory)
 % audio buffer
@@ -201,8 +211,10 @@ while ~done,
                 Neuro.NeuralFeatures = VelToNeuralFeatures(Params);
                 if Params.BLACKROCK, % override
                     Data.NeuralFeatures{end} = Neuro.NeuralFeatures;
+                    Data.NeuralTime(1,end) = tim;
                 else,
                     Data.NeuralFeatures{end+1} = Neuro.NeuralFeatures;
+                    Data.NeuralTime(1,end+1) = tim;
                 end
             end
         end

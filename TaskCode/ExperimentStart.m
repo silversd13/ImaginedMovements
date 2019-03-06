@@ -37,6 +37,19 @@ if BLACKROCK,
     cbmex('trialconfig', 1); % empty the buffer
 end
 
+%% Initialize Sync to Blackrock
+if Params.SerialSync,
+    Params.SerialPtr = serial(Params.SyncDev, 'BaudRate', Params.BaudRate);
+    fopen(Params.SerialPtr);
+    fprintf(Params.SerialPtr, '%s\n', 'START');
+end
+if Params.ArduinoSync,
+    Params.ArduinoPtr = arduino;
+    Params.ArduinoPin = 'D13';
+    writeDigitalPin(Params.ArduinoPtr, Params.ArduinoPin, 0); % make sure the pin is at 0
+    PulseArduino(20);
+end
+
 %% Neural Signal Processing
 % create neuro structure for keeping track of all neuro updates/state
 % changes
