@@ -61,7 +61,7 @@ Params.SerialSync = false;
 Params.SyncDev = '/dev/ttyS1';
 Params.BaudRate = 115200;
 
-Params.ArduinoSync = true;
+Params.ArduinoSync = false;
 
 %% Timing
 Params.ScreenRefreshRate = 10; % Hz
@@ -69,7 +69,7 @@ Params.UpdateRate = 10; % Hz
 Params.BaselineTime = 1; % secs
 
 %% Trial and Block Types
-Params.NumBlocks            = 10;
+Params.NumBlocks            = 20*4;
 Params.NumTrialsPerBlock    = 3;
 
 %% Hold Times
@@ -80,13 +80,19 @@ Params.MovementTime         = 4/5*Params.MovementInterval;
 
 %% Movements
 Params.Movements = {...
-    'Move Your Left Arm'
+    'Shake Your Head (Right then Left)'
     'Move Your Right Arm'
-    'Grasp Your Right Hand'
     'Say "OK"'
-    'Shake Your Head (No)'
-    'Nod Your Head (Yes)'
+    'Nod Your Head (Down then Up)'
     };
+% Params.Movements = {...
+%     'Move Your Left Arm'
+%     'Move Your Right Arm'
+%     'Grasp Your Right Hand'
+%     'Say "OK"'
+%     'Shake Your Head (No)'
+%     'Nod Your Head (Yes)'
+%     };
 Params.MovementMovDir = fullfile(projectdir,'TaskCode','movements');
 Params.MovementMovFiles = {...
     'nan.mov'

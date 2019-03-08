@@ -6,8 +6,8 @@ function ExperimentStart(Subject,BLACKROCK,DEBUG)
 %   remains unhidden
 
 %% Clear All and Close All
-clearvars
-clearvars -global -except Subject BLACKROCK DEBUG
+clearvars -except Subject BLACKROCK DEBUG
+clearvars -global
 clc
 warning off
 
