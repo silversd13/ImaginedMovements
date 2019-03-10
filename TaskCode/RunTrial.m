@@ -85,7 +85,7 @@ if Params.InterTrialInterval>0,
         end
 
         % end if takes too long
-        if TotalTime > Params.HoldInterval,
+        if TotalTime > Params.InterTrialInterval,
             done = 1;
         end
 
