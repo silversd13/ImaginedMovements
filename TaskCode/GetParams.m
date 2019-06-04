@@ -45,16 +45,16 @@ Params.SerialSync = false;
 Params.SyncDev = '/dev/ttyS1';
 Params.BaudRate = 115200;
 
-Params.ArduinoSync = false;
+Params.ArduinoSync = true;
 
 %% Timing
 Params.ScreenRefreshRate = 5; % Hz
 Params.UpdateRate = 5; % Hz
-Params.BaselineTime = 0; % secs
+Params.BaselineTime = 120; % secs
 
 %% Trial and Block Types
-Params.NumBlocks            = 1;
-Params.NumTrialsPerBlock    = 3;
+Params.NumBlocks            = 4;
+Params.NumTrialsPerBlock    = 5;
 
 %% Hold Times
 Params.InterTrialInterval   = 3;
@@ -124,7 +124,7 @@ Params.VisMvmt.Traj = GenerateCursorTraj(...
 %% BlackRock Params
 Params.BadChannels = [];
 Params.ZBufSize = 120; % secs
-Params.GenNeuralFeaturesFlag = true;
+Params.GenNeuralFeaturesFlag = false;
 Params.ZscoreRawFlag = true;
 Params.UpdateChStatsFlag = false;
 Params.ZscoreFeaturesFlag = true;

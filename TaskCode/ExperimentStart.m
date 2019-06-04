@@ -165,7 +165,6 @@ try
         % turn on update stats flags
         Neuro.UpdateChStatsFlag = true;
         Neuro.UpdateFeatureStatsFlag = true;
-        Neuro.DimRed.Flag = false;
 
         % collect data during baseline period
         Neuro = RunBaseline(Params,Neuro);
@@ -173,7 +172,6 @@ try
         % set flags back to original vals
         Neuro.UpdateChStatsFlag = Params.UpdateChStatsFlag;
         Neuro.UpdateFeatureStatsFlag = Params.UpdateFeatureStatsFlag;
-        Neuro.DimRed.Flag = Params.DimRed.Flag;
 
         % save of useful stats and params
         ch_stats = Neuro.ChStats;

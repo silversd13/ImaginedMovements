@@ -41,48 +41,8 @@ for i=(Neuro.NumPhase+1):Neuro.NumFeatures,
     neural_features(i,:) = mean(pwr(idx,:),1);
 end
 
-if Neuro.SpatialFiltering,
-    % remap features to reflect spatial layout of ecog grid
-    [R,C] = size(Neuro.ChMap);
-    Nch = 128; % channels
-    feature_map = cell(1,Neuro.NumFeatures);
-    for i=1:Neuro.NumFeatures,
-        feature_map{i} = zeros(R,C);
-        for ch=1:Nch,
-            [r,c] = find(Neuro.ChMap == ch);
-            feature_map{i}(r,c) = neural_features(i,ch);
-        end
-    end
-
-    % perform spatial filter per feature w/ param in filter bank
-    feature_map_filt = cell(1,Neuro.NumFeatures);
-    for i=1:Neuro.NumFeatures,
-        if i==Neuro.NumPhase,
-            idx = find([Neuro.FilterBank.feature]==i+1,1);
-            sz = Neuro.FilterBank(idx).spatial_filt_sz;
-        else,
-            idx = find([Neuro.FilterBank.feature]==i,1);
-            sz = Neuro.FilterBank(idx).spatial_filt_sz;
-        end
-        feature_map_filt{i} = medfilt2(feature_map{i},[sz,sz],'symmetric');
-    end
-
-    % remap to 2d matrix [ features x channels ]
-    new_neural_features = zeros(size(neural_features));
-    for i=1:Neuro.NumFeatures,
-        for ch=1:Nch,
-            [r,c] = find(Neuro.ChMap == ch);
-            new_neural_features(i,ch) = feature_map_filt{i}(r,c);
-        end
-    end
-
-    % vectorize
-    new_neural_features = reshape(new_neural_features',[],1);
-
-else, % spatial filtering off
-    % vectorize
-    new_neural_features = reshape(neural_features',[],1);
-end
+% vectorize
+new_neural_features = reshape(neural_features',[],1);
 
 % buffer of neural features
 if Neuro.NumFeatureBins>1,

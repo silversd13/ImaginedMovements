@@ -21,9 +21,6 @@ end
 if Neuro.ZscoreFeaturesFlag,
     Neuro = ZscoreFeatures(Neuro);
 end
-if Neuro.DimRed.Flag,
-    Neuro.NeuralFactors = Neuro.DimRed.F(Neuro.NeuralFeatures(Neuro.FeatureMask));
-end
 varargout{1} = Neuro;
 
 % if Data exists and is not empty, fill structure
@@ -34,9 +31,6 @@ if exist('Data','var') && ~isempty(Data),
     if Neuro.SaveRaw,
         Data.BroadbandData{end+1} = Neuro.BroadbandData;
         Data.Reference{end+1} = Neuro.Reference;
-    end
-    if Neuro.DimRed.Flag,
-        Data.NeuralFactors{end+1} = Neuro.NeuralFactors;
     end
     if Neuro.SaveProcessed,
         Data.ProcessedData{end+1} = Neuro.FilteredData;
