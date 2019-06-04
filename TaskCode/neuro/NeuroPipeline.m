@@ -6,13 +6,24 @@ function varargout = NeuroPipeline(Neuro,Data),
 % process neural data
 Neuro = ReadBR(Neuro);
 Neuro = RefNeuralData(Neuro);
+if Neuro.UpdateChStatsFlag,
+    Neuro = UpdateChStats(Neuro);
+end
 if Neuro.ZscoreRawFlag,
     Neuro = ZscoreChannels(Neuro);
-    Neuro = UpdateChStats(Neuro);
 end
 Neuro = ApplyFilterBank(Neuro);
 Neuro = UpdateNeuroBuf(Neuro);
 Neuro = CompNeuralFeatures(Neuro);
+if Neuro.UpdateFeatureStatsFlag,
+    Neuro = UpdateFeatureStats(Neuro);
+end
+if Neuro.ZscoreFeaturesFlag,
+    Neuro = ZscoreFeatures(Neuro);
+end
+if Neuro.DimRed.Flag,
+    Neuro.NeuralFactors = Neuro.DimRed.F(Neuro.NeuralFeatures(Neuro.FeatureMask));
+end
 varargout{1} = Neuro;
 
 % if Data exists and is not empty, fill structure
@@ -22,6 +33,10 @@ if exist('Data','var') && ~isempty(Data),
     Data.NeuralFeatures{end+1} = Neuro.NeuralFeatures;
     if Neuro.SaveRaw,
         Data.BroadbandData{end+1} = Neuro.BroadbandData;
+        Data.Reference{end+1} = Neuro.Reference;
+    end
+    if Neuro.DimRed.Flag,
+        Data.NeuralFactors{end+1} = Neuro.NeuralFactors;
     end
     if Neuro.SaveProcessed,
         Data.ProcessedData{end+1} = Neuro.FilteredData;
@@ -29,4 +44,4 @@ if exist('Data','var') && ~isempty(Data),
     varargout{2} = Data;
 end
 
-end % ProcessNeuro
+end % NeuroPipeline

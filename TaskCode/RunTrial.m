@@ -172,9 +172,6 @@ if Params.AudCue.Flag,
     PsychPortAudio('FillBuffer', Params.PAPTR, Params.AudCue.Beep);
     PsychPortAudio('Start', Params.PAPTR, 1, 0, 1);
 end
-% screen buffer
-Screen('FillOval', Params.WPTR, Params.VisCue.StartColor, VisCueRect)
-Screen('Flip', Params.WPTR);
 
 done = 0;
 TotalTime = 0;

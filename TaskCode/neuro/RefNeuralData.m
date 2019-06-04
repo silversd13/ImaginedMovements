@@ -8,7 +8,9 @@ function Neuro = RefNeuralData(Neuro),
 
 switch Neuro.ReferenceMode,
     case 0, % no reference
+        mu = zeros(size(Neuro.BroadbandData,1),1);
         ref_data = Neuro.BroadbandData;
+        mu = zeros(size(Neuro.BroadbandData,1),1);
     case 1, % common mean
         channels = setdiff(1:Neuro.NumChannels,Neuro.BadChannels);
         mu = mean(Neuro.BroadbandData(:,channels),2);
@@ -21,5 +23,6 @@ end % reference mode
 
 % put in Neuro structure
 Neuro.BroadbandData = ref_data;
+Neuro.Reference     = mu;
 
 end % RefNeuralData

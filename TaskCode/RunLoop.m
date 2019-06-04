@@ -2,6 +2,8 @@ function [Neuro,Params] = RunLoop(Params,Neuro,DataDir)
 % Defines the structure of collected data on each trial
 % Loops through blocks and trials within blocks
 
+global Cursor
+
 %% Start Experiment
 DataFields = struct(...
     'Params',Params,...
@@ -11,6 +13,8 @@ DataFields = struct(...
     'TrialEndTime',NaN,...
     'Time',[],...
     'Movement','',...
+    'ChStats',[],...
+    'FeatureStats',[],...
     'NeuralTime',[],...
     'NeuralTimeBR',[],...
     'NeuralSamps',[],...
@@ -23,6 +27,9 @@ DataFields = struct(...
 %%  Loop Through Blocks of Trials
 Movements = Params.Movements;
 Trial = 0;
+tlast = GetSecs;
+Cursor.LastPredictTime = tlast;
+Cursor.LastUpdateTime = tlast;
 for Block=1:Params.NumBlocks, % Block Loop
     
     % select movement for block
@@ -73,7 +80,13 @@ for Block=1:Params.NumBlocks, % Block Loop
         TrialData.Block = Block;
         TrialData.Trial = Trial;
         TrialData.Movement = Movement;
-
+        
+        % save ch stats and feature stats in each trial
+        TrialData.ChStats.Mean = Neuro.ChStats.mean;
+        TrialData.ChStats.Var = Neuro.ChStats.var;
+        TrialData.FeatureStats.Mean = Neuro.FeatureStats.mean;
+        TrialData.FeatureStats.Var = Neuro.FeatureStats.var;
+        
         % Run Trial
         TrialData.TrialStartTime  = GetSecs;
         [TrialData,Neuro,Params] = RunTrial(TrialData,Params,Neuro);
@@ -90,7 +103,7 @@ for Block=1:Params.NumBlocks, % Block Loop
     end % Trial Loop
     
     % Make some figures based on all trials
-    PlotERPs(fullfile(Params.Datadir,Movement),'off')
+    %PlotERPs(fullfile(Params.Datadir,Movement),'off')
     
 end % Block Loop
 

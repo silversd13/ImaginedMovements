@@ -54,16 +54,33 @@ end
 %% Neural Signal Processing
 % create neuro structure for keeping track of all neuro updates/state
 % changes
-Neuro.SaveRaw           = Params.SaveRaw;
 Neuro.ZscoreRawFlag     = Params.ZscoreRawFlag;
+Neuro.ZscoreFeaturesFlag= Params.ZscoreFeaturesFlag;
+Neuro.NumFeatureBins    = Params.NumFeatureBins;
 Neuro.SaveProcessed     = Params.SaveProcessed;
+Neuro.SaveRaw           = Params.SaveRaw;
 Neuro.FilterBank        = Params.FilterBank;
 Neuro.NumChannels       = Params.NumChannels;
 Neuro.BufferSamps       = Params.BufferSamps;
 Neuro.BadChannels       = Params.BadChannels;
 Neuro.ReferenceMode     = Params.ReferenceMode;
+Neuro.NumPhase          = Params.NumPhase;
+Neuro.NumPower          = Params.NumPower;
+Neuro.NumBuffer         = Params.NumBuffer;
+Neuro.NumHilbert        = Params.NumHilbert;
 Neuro.NumFeatures       = Params.NumFeatures;
 Neuro.LastUpdateTime    = GetSecs;
+Neuro.UpdateChStatsFlag = Params.UpdateChStatsFlag;
+Neuro.UpdateFeatureStatsFlag = Params.UpdateFeatureStatsFlag;
+
+% create a bad feature mask
+Mask = ones(Params.NumChannels*Params.NumFeatures,1);
+for i=1:length(Params.BadChannels),
+    bad_ch = Params.BadChannels(i);
+    Mask(bad_ch+(0:Params.NumChannels:Params.NumChannels*(Params.NumFeatures-1)),1) = 0;
+end
+Neuro.FeatureMask = Mask==1;
+Params.FeatureMask = Mask==1;
 
 % initialize filter bank state
 for i=1:length(Params.FilterBank),
@@ -71,21 +88,25 @@ for i=1:length(Params.FilterBank),
 end
 
 % initialize stats for each channel for z-scoring
-Neuro.ChStats.wSum1  = 0; % count
-Neuro.ChStats.wSum2  = 0; % squared count
-Neuro.ChStats.mean   = zeros(1,Params.NumChannels); % estimate of mean for each channel
-Neuro.ChStats.S      = zeros(1,Params.NumChannels); % aggregate deviation from estimated mean for each channel
-Neuro.ChStats.var    = zeros(1,Params.NumChannels); % estimate of variance for each channel
+Neuro.ChStats.mean      = zeros(1,Params.NumChannels); % estimate of mean for each channel
+Neuro.ChStats.var       = zeros(1,Params.NumChannels); % estimate of variance for each channel
+Neuro.ChStats.Idx       = 0;
+Neuro.ChStats.BufSize   = Params.ZBufSize * Params.UpdateRate;
+Neuro.ChStats.Buf       = cell(1,Neuro.ChStats.BufSize);
 
 % initialize stats for each feature for z-scoring
-Neuro.FeatureStats.wSum1  = 0; % count
-Neuro.FeatureStats.wSum2  = 0; % squared count
-Neuro.FeatureStats.mean   = zeros(1,Params.NumChannels); % estimate of mean for each channel
-Neuro.FeatureStats.S      = zeros(1,Params.NumChannels); % aggregate deviation from estimated mean for each channel
-Neuro.FeatureStats.var    = zeros(1,Params.NumChannels); % estimate of variance for each channel
+Neuro.FeatureStats.mean     = zeros(1,Params.NumFeatures*Params.NumChannels); % estimate of mean for each channel
+Neuro.FeatureStats.var      = zeros(1,Params.NumFeatures*Params.NumChannels); % estimate of variance for each channel
+Neuro.FeatureStats.Idx      = 0;
+Neuro.FeatureStats.BufSize  = Params.ZBufSize * Params.UpdateRate;
+Neuro.FeatureStats.Buf      = cell(1,Neuro.FeatureStats.BufSize);
 
 % create low freq buffers
-Neuro.FilterDataBuf = zeros(Neuro.BufferSamps,Neuro.NumChannels,3);
+Neuro.FilterDataBuf = zeros(Neuro.BufferSamps,Neuro.NumChannels,Neuro.NumBuffer);
+if Neuro.NumFeatureBins>1,
+    Neuro.NeuralFeaturesBuf = zeros(Neuro.NumFeatures*Neuro.NumChannels,...
+        Neuro.NumFeatureBins);
+end
 
 %% Check Important Params with User
 LogicalStr = {'false', 'true'};
@@ -141,7 +162,32 @@ Params.MovementMovRect([2,4]) = Params.MovementMovRect([2,4]) + Params.Center(2)
 try
     % Baseline 
     if Params.BaselineTime>0,
+        % turn on update stats flags
+        Neuro.UpdateChStatsFlag = true;
+        Neuro.UpdateFeatureStatsFlag = true;
+        Neuro.DimRed.Flag = false;
+
+        % collect data during baseline period
         Neuro = RunBaseline(Params,Neuro);
+        
+        % set flags back to original vals
+        Neuro.UpdateChStatsFlag = Params.UpdateChStatsFlag;
+        Neuro.UpdateFeatureStatsFlag = Params.UpdateFeatureStatsFlag;
+        Neuro.DimRed.Flag = Params.DimRed.Flag;
+
+        % save of useful stats and params
+        ch_stats = Neuro.ChStats;
+        save(fullfile(Params.ProjectDir,'TaskCode','persistence','ch_stats.mat'),...
+            'ch_stats','-v7.3','-nocompression');
+        feature_stats = Neuro.FeatureStats;
+        save(fullfile(Params.ProjectDir,'TaskCode','persistence','feature_stats.mat'),...
+            'feature_stats','-v7.3','-nocompression');
+    else, % if baseline is set to 0, just load stats
+        f=load(fullfile(Params.ProjectDir,'TaskCode','persistence','ch_stats.mat'));
+        Neuro.ChStats = f.ch_stats;
+        f=load(fullfile(Params.ProjectDir,'TaskCode','persistence','feature_stats.mat'));
+        Neuro.FeatureStats = f.feature_stats;
+        clear('f');
     end
     
     % Imagined Cursor Movements Loop

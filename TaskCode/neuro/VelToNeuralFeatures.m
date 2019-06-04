@@ -1,5 +1,5 @@
-function Z = VelToNeuralFeatures(Params,noise,PLOT)
-% function Z = VelToNeuralFeatures(Params,noise,PLOT)
+function varargout = VelToNeuralFeatures(Params,Data,noise,PLOT)
+% function [Z,Data] = VelToNeuralFeatures(Params,noise,PLOT)
 % Use a 2D gaussian function to generate neural features vector
 % neural features change depending input velocity
 %
@@ -8,8 +8,9 @@ function Z = VelToNeuralFeatures(Params,noise,PLOT)
 % PLOT - 0-no plot, 1-plot (default=1)
 %
 % OUTPUT: 
-% Z - neural features vector with size of 128*7 
-%
+% Z - neural features vector with size of 128 x num_features 
+% Data - Data structure updated with neural features
+% 
 % CREATED: G. Nootz  May 2012
 % 
 %  Modifications:
@@ -19,17 +20,17 @@ function Z = VelToNeuralFeatures(Params,noise,PLOT)
 % ---------User Input---------------------
 
 % inputs
-if ~exist('noise','var'), noise=100; end
+if ~exist('noise','var'), noise=150; end
 if ~exist('PLOT','var'), PLOT = 0; end
 
 % compute velocities
 [x,y] = GetMouse();
-Vx = (x - Params.Center(1));
-Vy = (y - Params.Center(2));
+Vx = x - Params.Center(1);
+Vy = y - Params.Center(2);
 
 % rescaling to matrix map
-MdataSizeY=32;
-MdataSizeX=28;
+MdataSizeY=16;
+MdataSizeX=8*Params.NumFeatures;
 
 Vy=MdataSizeY/2 + Vy*(MdataSizeY/(2*600));
 Vx=MdataSizeX/2 + Vx*(MdataSizeX/(2*600));
@@ -46,7 +47,9 @@ Z = D2GaussFunction(x,xdata);
 
 % add noise
 noise = noise/100 * x(1);
-Z = Z + noise*(rand(size(X,1),size(Y,2))-0.5);
+% Z = noise*(rand(size(X,1),size(Y,2))-0.5);
+% Z = Z + noise*(rand(size(X,1),size(Y,2))-0.5);
+Z = Z + noise*(rand(size(X,1),size(Y,2))-2);
 
 % feature plot
 if PLOT,
@@ -55,8 +58,23 @@ if PLOT,
 	colormap('jet')
 end
 
-% move to correct ecog dims
-Z = reshape(Z,7,128);
+% vectorize output
+Z = Z(:);
+
+% zero out "bad channels"
+Z(~Params.FeatureMask) = 0;
+
+% update data structure if given
+if exist('Data','var')
+    Data.NeuralFeatures{end+1} = Z;
+    Data.NeuralTime(1,end+1) = GetSecs;
+end
+
+% outputs
+varargout{1} = Z;
+if nargout==2,
+    varargout{2} = Data;
+end
 
 end % VelToNeuralFeatures
 
